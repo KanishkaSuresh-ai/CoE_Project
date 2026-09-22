@@ -1,22 +1,15 @@
-import os
+from gemini_services import generate_answer
 
-from dotenv import load_dotenv
-import google.generativeai as genai
 
-load_dotenv()
+context = """
+The company was established in 1998 in Chennai.
+It initially started with 20 employees.
+The company focuses on software development.
+"""
 
-def main():
-    api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        raise ValueError(
-            "Missing API key. Set GOOGLE_API_KEY or GEMINI_API_KEY in your environment or .env file."
-        )
+question = "When was the company established?"
 
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("gemini-1.5-flash")
+answer = generate_answer(context, question)
 
-    response = model.generate_content("Say hello in one short sentence.")
-    print(response.text)
-
-if __name__ == "__main__":
-    main()
+print("Question:", question)
+print("Answer:", answer)
