@@ -4,3 +4,4 @@ __pycache__/
 *.pyc
 .env
 backend/resume (9).pdf
+uploaded_*.pdf
