@@ -33,7 +33,7 @@ def ask_question(question, chunks, index):
     distances, indices = search_vector_store(
         index,
         question_embedding,
-        k=3
+        k=5
     )
 
     # Get relevant chunks
