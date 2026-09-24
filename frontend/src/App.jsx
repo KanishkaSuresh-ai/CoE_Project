@@ -53,7 +53,7 @@ function App() {
 
     try {
       // Backend currently processes one document at a time
-      await uploadDocument(selectedFiles[0])
+      await uploadDocument(selectedFiles)
 
       setDocumentReady(true)
       setStep('chat')
