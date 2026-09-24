@@ -12,14 +12,12 @@ export async function uploadDocument(files) {
     body: formData,
   })
 
-  if (!response.ok) {
-    throw new Error('Document upload failed')
-  }
-
   const data = await response.json()
 
-  if (data.error) {
-    throw new Error(data.error)
+  if (!response.ok) {
+    throw new Error(
+      data.detail || data.error || 'Document upload failed'
+    )
   }
 
   return data
@@ -36,9 +34,13 @@ export async function askQuestion(question) {
     }),
   })
 
+  const data = await response.json()
+
   if (!response.ok) {
-    throw new Error('Question request failed')
+    throw new Error(
+      data.detail || data.error || 'Question request failed'
+    )
   }
 
-  return response.json()
+  return data
 }
