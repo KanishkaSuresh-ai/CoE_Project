@@ -8,7 +8,7 @@ router = APIRouter()
 
 
 @router.post("/upload")
-async def upload_documents(files: list[UploadFile] = File(...)):
+async def upload_documents(files: list[UploadFile] = File(..., description="Upload up to 3 PDF or TXT files")):
 
     # Check maximum number of files
     if len(files) > 3:
