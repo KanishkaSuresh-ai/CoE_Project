@@ -5,3 +5,4 @@ __pycache__/
 .env
 backend/resume (9).pdf
 uploaded_*.pdf
+frontend/node_modules/
