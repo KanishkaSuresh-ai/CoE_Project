@@ -3,7 +3,15 @@ import numpy as np
 
 
 def create_vector_store(embeddings):
-    vectors = np.array(embeddings).astype("float32")
+    if not embeddings:
+        raise ValueError("No embeddings were generated from the uploaded file.")
+
+    vectors = np.asarray(embeddings, dtype="float32")
+
+    if vectors.ndim == 1:
+        vectors = vectors.reshape(1, -1)
+    elif vectors.ndim != 2:
+        raise ValueError("Embedding data is not in the expected 2D shape.")
 
     dimension = vectors.shape[1]
 

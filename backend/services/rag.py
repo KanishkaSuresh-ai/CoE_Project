@@ -13,6 +13,11 @@ def build_rag_system(file_paths):
     for file_path in file_paths:
         text = extract_text_from_pdf(file_path)
 
+        if not text or not text.strip():
+            raise ValueError(
+                f"No readable text found in the uploaded file: {file_path}"
+            )
+
         chunks = split_text_into_chunks(text)
 
         all_chunks.extend(chunks)
