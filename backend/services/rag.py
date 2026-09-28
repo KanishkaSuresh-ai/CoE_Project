@@ -26,25 +26,73 @@ def build_rag_system(file_paths, filenames=None):
             )
 
         chunks = split_text_into_chunks(text)
+
         all_chunks.extend(chunks)
         chunk_sources.extend([filename] * len(chunks))
+
+    if not all_chunks:
+        raise ValueError(
+            "No readable text was found in the uploaded document."
+        )
 
     embeddings = create_embeddings(all_chunks)
 
     index = create_vector_store(embeddings)
+
     return all_chunks, index, chunk_sources
 
 
 def ask_question(question, chunks, index, chunk_sources=None):
+    if not chunks:
+        return (
+            "I could not find the answer in the uploaded document.",
+            []
+        )
+
+    # Create embedding for the question
     question_embedding = create_embedding(question)
-    _, indices = search_vector_store(index, question_embedding, k=5)
 
-    valid_indices = [int(i) for i in indices[0] if 0 <= i < len(chunks)]
-    relevant_chunks = [chunks[i] for i in valid_indices]
-    context = "\n\n".join(relevant_chunks)
-    answer = generate_answer(question, context)
+    # Retrieve more chunks so broader questions have enough context
+    k = min(10, len(chunks))
 
+    _, indices = search_vector_store(
+        index,
+        question_embedding,
+        k=k
+    )
+
+    # Keep only valid indices
+    valid_indices = [
+        int(i)
+        for i in indices[0]
+        if 0 <= int(i) < len(chunks)
+    ]
+
+    # Remove duplicate indices while keeping the retrieval order
+    valid_indices = list(dict.fromkeys(valid_indices))
+
+    relevant_chunks = [
+        chunks[i]
+        for i in valid_indices
+    ]
+
+    # Build context for Gemini
+    context_parts = []
+
+    for chunk in relevant_chunks:
+        context_parts.append(chunk)
+
+    context = "\n\n".join(context_parts)
+
+    # Generate answer using retrieved document content
+    answer = generate_answer(
+        question,
+        context
+    )
+
+    # Return source information
     chunk_sources = chunk_sources or []
+
     sources = list(dict.fromkeys(
         chunk_sources[i]
         for i in valid_indices

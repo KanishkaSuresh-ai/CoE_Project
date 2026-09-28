@@ -16,7 +16,7 @@ MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 async def upload_documents(
     files: list[UploadFile] = File(..., description="Upload up to 3 PDF, TXT, or DOCX files")
 ):
-    if len(files) > 3:
+    if len(files) > 1:
         raise HTTPException(
             status_code=400,
             detail="You can upload a maximum of 3 files."

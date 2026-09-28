@@ -8,7 +8,7 @@ import PDFViewer from './components/PDFViewer'
 import { uploadDocument, askQuestion } from './services/api'
 import './App.css'
 
-const MAX_FILES = 3
+const MAX_FILES = 1
 
 function App() {
   const [selectedFiles, setSelectedFiles] = useState([])
@@ -18,33 +18,40 @@ function App() {
   const [rightTab, setRightTab] = useState('preview') // 'sources' | 'preview' | 'details'
   const [showUploadModal, setShowUploadModal] = useState(false)
 
-  const [messages, setMessages] = useState(() => {
-    try {
-      const saved = localStorage.getItem('chatHistory')
-      return saved ? JSON.parse(saved) : []
-    } catch {
-      return []
-    }
-  })
+ const [chatHistories, setChatHistories] = useState(() => {
+  try {
+    const saved = localStorage.getItem('chatHistories')
+    return saved ? JSON.parse(saved) : {}
+  } catch {
+    return {}
+  }
+})
 
-  const [loading, setLoading] = useState(false)
+const [messages, setMessages] = useState([])
+
+const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [popupMessage, setPopupMessage] = useState(null)
+  const getFileKey = (file) => {
+  if (!file) return null
+  return `${file.name}-${file.lastModified}`
+}
 
   useEffect(() => {
-    localStorage.setItem('chatHistory', JSON.stringify(messages))
-  }, [messages])
+  localStorage.setItem('chatHistories', JSON.stringify(chatHistories))
+}, [chatHistories])
 
   const handleFilesSelect = (files) => {
-    setSelectedFiles(files)
-    setError(null)
-    setDocumentReady(false)
-    setSessionId(null)
-    setMessages([])
-    if (files.length > 0) {
-      setActiveFileIndex(0)
-    }
+  setSelectedFiles(files)
+  setError(null)
+  setDocumentReady(false)
+  setSessionId(null)
+  setMessages([])
+
+  if (files.length > 0) {
+    setActiveFileIndex(0)
   }
+}
 
   const handleLimitExceeded = () => {
     setPopupMessage(`You can upload a maximum of ${MAX_FILES} files only.`)
@@ -95,7 +102,11 @@ function App() {
     setError(null)
 
     try {
-      const result = await askQuestion(question,sessionId)
+      const result = await askQuestion(
+  question,
+  sessionId,
+  selectedFiles[activeFileIndex].name
+)
   
       const activeFile = selectedFiles[activeFileIndex]
 
@@ -115,14 +126,39 @@ function App() {
   }
 
   const handleDocumentSelect = (index) => {
-    setActiveFileIndex(index)
-    setError(null)
+  const currentFile = selectedFiles[activeFileIndex]
+  const nextFile = selectedFiles[index]
+
+  // Save the current document's chat
+  if (currentFile) {
+    const currentKey = getFileKey(currentFile)
+
+    setChatHistories((prev) => ({
+      ...prev,
+      [currentKey]: messages,
+    }))
   }
 
-  const handleClearChat = () => {
-    setMessages([])
-    localStorage.removeItem('chatHistory')
+  // Load the selected document's chat
+  const nextKey = getFileKey(nextFile)
+  const nextMessages = chatHistories[nextKey] || []
+
+  setMessages(nextMessages)
+  setActiveFileIndex(index)
+  setError(null)
+}
+ const handleClearChat = () => {
+  const activeKey = getFileKey(selectedFiles[activeFileIndex])
+
+  setMessages([])
+
+  if (activeKey) {
+    setChatHistories((prev) => ({
+      ...prev,
+      [activeKey]: [],
+    }))
   }
+}
 
   const activeFile = selectedFiles[activeFileIndex]
 

@@ -15,7 +15,7 @@ function FileUpload({
   const [success, setSuccess] = useState('')
 
   const allowedExtensions = ['.pdf', '.txt', '.docx']
-  const MAX_FILES = 3
+  const MAX_FILES = 1
   const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
 
   const isAllowedFile = (file) =>

@@ -6,7 +6,7 @@ from google import genai
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR.parent / ".env")
+load_dotenv(BASE_DIR / ".env")
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
