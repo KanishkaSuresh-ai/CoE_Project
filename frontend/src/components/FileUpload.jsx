@@ -99,15 +99,23 @@ function FileUpload({
   }
 
   const removeFile = (index) => {
-    const updated = selectedFiles.filter((_, i) => i !== index)
-    onFilesSelect(updated)
-    setError('')
-    if (updated.length > 0) {
-      setSuccess(`${updated.length} document(s) selected.`)
-    } else {
-      setSuccess('')
-    }
+  console.log("Remove clicked:", index)
+  console.log("Before:", selectedFiles)
+
+  const updated = selectedFiles.filter((_, i) => i !== index)
+
+  console.log("After:", updated)
+
+  onFilesSelect(updated)
+
+  setError('')
+
+  if (updated.length > 0) {
+    setSuccess(`${updated.length} document(s) selected.`)
+  } else {
+    setSuccess('')
   }
+}
 
   const handleUploadClick = async () => {
     if (selectedFiles.length === 0) {
@@ -296,4 +304,4 @@ function FileUpload({
   return content
 }
 
-export default FileUpload
+export default FileUpload
