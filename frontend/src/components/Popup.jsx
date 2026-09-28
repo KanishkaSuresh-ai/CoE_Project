@@ -5,12 +5,20 @@ function Popup({ message, onClose }) {
 
   return (
     <div className="popup-overlay" onClick={onClose}>
-      <div className="popup-box" onClick={(e) => e.stopPropagation()}>
-        <p>⚠️ {message}</p>
-        <button onClick={onClose}>OK</button>
+      <div className="popup-card" onClick={(e) => e.stopPropagation()}>
+        <div className="popup-header">
+          <div className="popup-icon">⚠️</div>
+          <h3>Notice</h3>
+        </div>
+        <p className="popup-body">{message}</p>
+        <div className="popup-actions">
+          <button type="button" className="popup-confirm-btn" onClick={onClose}>
+            Got it
+          </button>
+        </div>
       </div>
     </div>
   )
 }
 
-export default Popup
+export default Popup
