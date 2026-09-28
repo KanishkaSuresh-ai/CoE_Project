@@ -8,18 +8,29 @@ router = APIRouter()
 
 
 @router.post("/upload")
-async def upload_document(file: UploadFile = File(...)):
+async def upload_documents(files: list[UploadFile] = File(...)):
 
-    file_path = f"uploaded_{file.filename}"
+    if len(files) > 3:
+        return {
+            "error": "You can upload a maximum of 3 files."
+        }
 
-    with open(file_path, "wb") as buffer:
-        buffer.write(await file.read())
+    file_paths = []
 
-    chunks, index = build_rag_system(file_path)
+    for file in files:
+        file_path = f"uploaded_{file.filename}"
+
+        with open(file_path, "wb") as buffer:
+            buffer.write(await file.read())
+
+        file_paths.append(file_path)
+
+    # Build one RAG system using all uploaded documents
+    chunks, index = build_rag_system(file_paths)
 
     set_rag_system(chunks, index)
 
     return {
-        "filename": file.filename,
-        "message": "File uploaded and RAG system created successfully"
+        "filenames": [file.filename for file in files],
+        "message": "Documents uploaded and RAG system created successfully"
     }

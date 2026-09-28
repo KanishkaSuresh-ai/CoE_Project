@@ -1,8 +1,11 @@
 const API_URL = 'http://127.0.0.1:8001'
 
-export async function uploadDocument(file) {
+export async function uploadDocument(files) {
   const formData = new FormData()
-  formData.append('file', file)
+
+  files.forEach((file) => {
+    formData.append('files', file)
+  })
 
   const response = await fetch(`${API_URL}/upload`, {
     method: 'POST',
@@ -13,7 +16,13 @@ export async function uploadDocument(file) {
     throw new Error('Document upload failed')
   }
 
-  return response.json()
+  const data = await response.json()
+
+  if (data.error) {
+    throw new Error(data.error)
+  }
+
+  return data
 }
 
 export async function askQuestion(question) {

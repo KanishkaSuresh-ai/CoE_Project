@@ -5,24 +5,29 @@ from services.vector_store import create_vector_store, search_vector_store
 from services.generator import generate_answer
 
 
-def build_rag_system(pdf_path):
-    # Read PDF
-    text = extract_text_from_pdf(pdf_path)
+def build_rag_system(file_paths):
+    # Store chunks from all uploaded documents
+    all_chunks = []
 
-    # Split text into chunks
-    chunks = split_text_into_chunks(text)
+    # Read and chunk every document
+    for file_path in file_paths:
+        text = extract_text_from_pdf(file_path)
+
+        chunks = split_text_into_chunks(text)
+
+        all_chunks.extend(chunks)
 
     # Create embeddings for all chunks
     embeddings = []
 
-    for chunk in chunks:
+    for chunk in all_chunks:
         embedding = create_embedding(chunk)
         embeddings.append(embedding)
 
-    # Create FAISS index
+    # Create one FAISS index containing all documents
     index = create_vector_store(embeddings)
 
-    return chunks, index
+    return all_chunks, index
 
 
 def ask_question(question, chunks, index):
@@ -40,7 +45,8 @@ def ask_question(question, chunks, index):
     relevant_chunks = []
 
     for i in indices[0]:
-        relevant_chunks.append(chunks[i])
+        if i < len(chunks):
+            relevant_chunks.append(chunks[i])
 
     # Combine relevant chunks
     context = "\n\n".join(relevant_chunks)

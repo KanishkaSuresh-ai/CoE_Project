@@ -1,14 +1,17 @@
 import React from 'react'
 
-function Loading() {
+function Loading({ text = 'Analyzing documents & thinking' }) {
   return (
-    <div className="loading">
-      Thinking
+    <div className="loading-state">
+      <div className="loading-pulse-ring"></div>
+      <span className="loading-text">{text}</span>
       <span className="typing-dots">
-        <span></span><span></span><span></span>
+        <span></span>
+        <span></span>
+        <span></span>
       </span>
     </div>
   )
 }
 
-export default Loading
+export default Loading
