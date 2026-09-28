@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from services.pdf_reader import extract_text_from_pdf
 from services.chunker import split_text_into_chunks
 from services.embeddings import create_embedding
@@ -5,58 +7,50 @@ from services.vector_store import create_vector_store, search_vector_store
 from services.generator import generate_answer
 
 
-def build_rag_system(file_paths):
-    # Store chunks from all uploaded documents
-    all_chunks = []
+def build_rag_system(file_paths, filenames=None):
+    if isinstance(file_paths, (str, Path)):
+        file_paths = [file_paths]
 
-    # Read and chunk every document
-    for file_path in file_paths:
+    if filenames is None:
+        filenames = [Path(file_path).name for file_path in file_paths]
+
+    all_chunks = []
+    chunk_sources = []
+
+    for file_path, filename in zip(file_paths, filenames):
         text = extract_text_from_pdf(file_path)
 
         if not text or not text.strip():
             raise ValueError(
-                f"No readable text found in the uploaded file: {file_path}"
+                f"No readable text found in the uploaded file: {filename}"
             )
 
         chunks = split_text_into_chunks(text)
-
         all_chunks.extend(chunks)
+        chunk_sources.extend([filename] * len(chunks))
 
-    # Create embeddings for all chunks
     embeddings = []
-
     for chunk in all_chunks:
-        embedding = create_embedding(chunk)
-        embeddings.append(embedding)
+        embeddings.append(create_embedding(chunk))
 
-    # Create one FAISS index containing all documents
     index = create_vector_store(embeddings)
+    return all_chunks, index, chunk_sources
 
-    return all_chunks, index
 
-
-def ask_question(question, chunks, index):
-    # Convert question into an embedding
+def ask_question(question, chunks, index, chunk_sources=None):
     question_embedding = create_embedding(question)
+    _, indices = search_vector_store(index, question_embedding, k=5)
 
-    # Search FAISS
-    distances, indices = search_vector_store(
-        index,
-        question_embedding,
-        k=5
-    )
-
-    # Get relevant chunks
-    relevant_chunks = []
-
-    for i in indices[0]:
-        if i < len(chunks):
-            relevant_chunks.append(chunks[i])
-
-    # Combine relevant chunks
+    valid_indices = [int(i) for i in indices[0] if 0 <= i < len(chunks)]
+    relevant_chunks = [chunks[i] for i in valid_indices]
     context = "\n\n".join(relevant_chunks)
-
-    # Generate answer using Gemini
     answer = generate_answer(question, context)
 
-    return answer
+    chunk_sources = chunk_sources or []
+    sources = list(dict.fromkeys(
+        chunk_sources[i]
+        for i in valid_indices
+        if i < len(chunk_sources)
+    ))
+
+    return answer, sources

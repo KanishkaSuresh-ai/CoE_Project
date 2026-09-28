@@ -6,3 +6,6 @@ __pycache__/
 backend/resume (9).pdf
 uploaded_*.pdf
 frontend/node_modules/
+node_modules/
+backend/uploads/
+.venv/

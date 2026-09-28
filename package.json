@@ -1,0 +1,26 @@
+{
+  "name": "coe_project",
+  "version": "1.0.0",
+  "description": "A document question-answering system that allows users to\r upload a PDF or text document and ask questions based only\r on the information contained in the document.",
+  "main": "index.js",
+  "scripts": {
+  "frontend": "npm --prefix frontend run dev",
+  "backend": "cd backend && ..\\.venv\\Scripts\\python.exe -m uvicorn server:app --reload --port 8001",
+  "dev": "concurrently \"npm run backend\" \"npm run frontend\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KanishkaSuresh-ai/CoE_Project.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/KanishkaSuresh-ai/CoE_Project/issues"
+  },
+  "homepage": "https://github.com/KanishkaSuresh-ai/CoE_Project#readme",
+  "devDependencies": {
+    "concurrently": "^10.0.5"
+  }
+}

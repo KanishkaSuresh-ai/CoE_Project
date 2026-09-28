@@ -5,15 +5,20 @@ function FileUpload({ selectedFiles, documentReady, onFilesSelect, onUpload, onL
   const [uploading, setUploading] = useState(false)
   const [dragActive, setDragActive] = useState(false)
 
-  const allowedTypes = ['application/pdf', 'text/plain']
   const MAX_FILES = 3
+
+  const allowedExtensions = ['.pdf', '.txt', '.docx']
 
   const validateAndAdd = (fileList) => {
     const incoming = Array.from(fileList)
 
-    const validFiles = incoming.filter((file) => allowedTypes.includes(file.type))
+    const validFiles = incoming.filter((file) =>
+      allowedExtensions.some((extension) =>
+        file.name.toLowerCase().endsWith(extension)
+      )
+    )
     if (validFiles.length !== incoming.length) {
-      alert('Only PDF or TXT files are allowed.')
+      alert('Only PDF, TXT, or DOCX files are allowed.')
     }
 
     const combined = [...selectedFiles, ...validFiles]
@@ -63,9 +68,9 @@ function FileUpload({ selectedFiles, documentReady, onFilesSelect, onUpload, onL
       onDragLeave={() => setDragActive(false)}
       onDrop={handleDrop}
     >
-      <p>📁 Drag &amp; drop up to {MAX_FILES} PDF/TXT files, or select below</p>
+      <p>📁 Drag &amp; drop up to {MAX_FILES} PDF/TXT/DOCX files, or select below</p>
 
-      <input type="file" accept=".pdf,.txt" multiple onChange={handleFileChange} />
+      <input type="file" accept=".pdf,.txt,.docx" multiple onChange={handleFileChange} />
 
       {selectedFiles.length > 0 && (
         <div className="file-info">

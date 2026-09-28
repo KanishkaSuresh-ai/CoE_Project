@@ -46,7 +46,7 @@ def generate_answer(
     context: str,
     question: str,
     *,
-    model: str = "gemini-1.5-flash",
+    model: str = "gemini-2.5-flash",
     temperature: float = 0.0,
 ) -> str:
     """

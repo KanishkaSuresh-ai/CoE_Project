@@ -1,2 +1,21 @@
-google-generativeai
+#Web Framework
+fastapi
+uvicorn[standard]
+python-multipart
+
+#Gemini AI (new SDK used in backend/services)
+google-genai
 python-dotenv
+
+#Vector store
+faiss-cpu
+numpy
+
+#PDF processing
+pypdf
+pdfplumber
+pymupdf
+python-docx
+
+#OCR(for scanned/image-based PDFs)
+rapidocr-onnxruntime

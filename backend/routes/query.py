@@ -1,41 +1,49 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from services.rag import ask_question
 
-
 router = APIRouter()
-
-chunks = None
-index = None
+sessions = {}
 
 
 class QuestionRequest(BaseModel):
     question: str
+    session_id: str
 
 
-def set_rag_system(new_chunks, new_index):
-    global chunks, index
-
-    chunks = new_chunks
-    index = new_index
+def set_rag_system(session_id, new_chunks, new_index, new_chunk_sources=None):
+    sessions[session_id] = {
+        "chunks": new_chunks,
+        "index": new_index,
+        "chunk_sources": new_chunk_sources or [],
+    }
 
 
 @router.post("/ask")
 def ask(request: QuestionRequest):
+    if not request.question.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Please enter a question."
+        )
 
-    if chunks is None or index is None:
-        return {
-            "error": "Please upload a document first."
-        }
+    session = sessions.get(request.session_id)
+    if session is None:
+        raise HTTPException(
+            status_code=404,
+            detail="This document session was not found. Please upload your documents again."
+        )
 
-    answer = ask_question(
+    answer, sources = ask_question(
         request.question,
-        chunks,
-        index
+        session["chunks"],
+        session["index"],
+        session["chunk_sources"]
     )
 
     return {
         "question": request.question,
-        "answer": answer
+        "answer": answer,
+        "sources": sources
     }

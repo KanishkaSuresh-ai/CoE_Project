@@ -13,6 +13,7 @@ function App() {
   const [step, setStep] = useState('upload')
   const [selectedFiles, setSelectedFiles] = useState([])
   const [documentReady, setDocumentReady] = useState(false)
+  const [sessionId, setSessionId] = useState(null)
 
   const [messages, setMessages] = useState(() => {
     const saved = localStorage.getItem('chatHistory')
@@ -31,6 +32,7 @@ function App() {
   // Handle file selection
   const handleFilesSelect = (files) => {
     setSelectedFiles(files)
+    setSessionId(null)
     setDocumentReady(false)
     setError(null)
   }
@@ -52,9 +54,11 @@ function App() {
     setError(null)
 
     try {
-      // Backend currently processes one document at a time
-      await uploadDocument(selectedFiles)
+      // Process all selected documents together
+      const uploadResult = await uploadDocument(selectedFiles)
+      setSessionId(uploadResult.session_id)
 
+      setMessages([])
       setDocumentReady(true)
       setStep('chat')
     } catch (err) {
@@ -66,7 +70,7 @@ function App() {
 
   // Send question to backend
   const handleQuestion = async (question) => {
-    if (!documentReady) {
+    if (!documentReady || !sessionId) {
       return
     }
 
@@ -83,15 +87,13 @@ function App() {
 
     try {
       // Send question to FastAPI backend
-      const result = await askQuestion(question)
+      const result = await askQuestion(question, sessionId)
 
       // Add backend answer to chat
       const assistantMessage = {
         role: 'assistant',
         content: result.answer,
-        source: selectedFiles[0]
-          ? selectedFiles[0].name
-          : 'document.pdf',
+        source: result.sources.join(', '),
       }
 
       setMessages((prev) => [...prev, assistantMessage])
@@ -106,6 +108,7 @@ function App() {
   const handleChangeDocument = () => {
     setStep('upload')
     setDocumentReady(false)
+    setSessionId(null)
   }
 
   // Clear chat history
