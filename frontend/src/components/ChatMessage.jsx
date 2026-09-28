@@ -3,7 +3,6 @@ import React, { useState } from 'react'
 function ChatMessage({ role, content, source, page }) {
   const [copied, setCopied] = useState(false)
   const isUser = role === 'user'
-  const confidence = !isUser ? 92 : null
 
   const handleCopy = async () => {
     try {
@@ -49,9 +48,6 @@ function ChatMessage({ role, content, source, page }) {
             <span className="source-citation" title="Referenced source">
               📄 {source}{page ? `, page ${page}` : ''}
             </span>
-            <span className="confidence-badge">
-              ✓ {confidence}% match
-            </span>
           </div>
         )}
       </div>
@@ -59,4 +55,4 @@ function ChatMessage({ role, content, source, page }) {
   )
 }
 
-export default ChatMessage
+export default ChatMessage

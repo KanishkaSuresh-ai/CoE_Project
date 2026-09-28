@@ -2,7 +2,7 @@ from pathlib import Path
 
 from services.pdf_reader import extract_text_from_pdf
 from services.chunker import split_text_into_chunks
-from services.embeddings import create_embedding
+from services.embeddings import create_embedding, create_embeddings
 from services.vector_store import create_vector_store, search_vector_store
 from services.generator import generate_answer
 
@@ -29,9 +29,7 @@ def build_rag_system(file_paths, filenames=None):
         all_chunks.extend(chunks)
         chunk_sources.extend([filename] * len(chunks))
 
-    embeddings = []
-    for chunk in all_chunks:
-        embeddings.append(create_embedding(chunk))
+    embeddings = create_embeddings(all_chunks)
 
     index = create_vector_store(embeddings)
     return all_chunks, index, chunk_sources

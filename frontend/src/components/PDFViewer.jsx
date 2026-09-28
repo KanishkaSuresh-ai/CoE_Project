@@ -19,9 +19,11 @@ function PDFViewer({ file }) {
 
     if (file && file.type === 'text/plain') {
       const reader = new FileReader()
-      reader.onload = (e) => {
-        setTextContent(e.target?.result || '')
+
+      reader.onload = (event) => {
+        setTextContent(event.target?.result || '')
       }
+
       reader.readAsText(file)
     }
   }, [file])
@@ -36,7 +38,23 @@ function PDFViewer({ file }) {
     )
   }
 
-  const isPdf = file.type === 'application/pdf'
+  const fileName = file.name.toLowerCase()
+  const isPdf = file.type === 'application/pdf' || fileName.endsWith('.pdf')
+  const isDocx = fileName.endsWith('.docx')
+
+  if (isDocx) {
+    return (
+      <div className="text-preview-container">
+        <div className="text-preview-header">
+          <div className="text-preview-badge">📝 DOCX Document</div>
+          <span className="text-preview-name">{file.name}</span>
+        </div>
+        <div className="text-preview-content">
+          <p>Preview is unavailable, but you can ask questions about this document.</p>
+        </div>
+      </div>
+    )
+  }
 
   if (!isPdf) {
     return (
@@ -85,9 +103,11 @@ function PDFViewer({ file }) {
           >
             ‹
           </button>
+
           <span className="page-indicator">
             {pageNumber} / {numPages || '...'}
           </span>
+
           <button
             type="button"
             className="tool-btn"
@@ -109,9 +129,11 @@ function PDFViewer({ file }) {
           >
             −
           </button>
+
           <span className="zoom-indicator">
             {Math.round(scale * 100)}%
           </span>
+
           <button
             type="button"
             className="tool-btn"
@@ -152,4 +174,4 @@ function PDFViewer({ file }) {
   )
 }
 
-export default PDFViewer
+export default PDFViewer

@@ -14,6 +14,7 @@ function App() {
   const [selectedFiles, setSelectedFiles] = useState([])
   const [activeFileIndex, setActiveFileIndex] = useState(0)
   const [documentReady, setDocumentReady] = useState(false)
+  const [sessionId, setSessionId] = useState(null)
   const [rightTab, setRightTab] = useState('preview') // 'sources' | 'preview' | 'details'
   const [showUploadModal, setShowUploadModal] = useState(false)
 
@@ -37,6 +38,9 @@ function App() {
   const handleFilesSelect = (files) => {
     setSelectedFiles(files)
     setError(null)
+    setDocumentReady(false)
+    setSessionId(null)
+    setMessages([])
     if (files.length > 0) {
       setActiveFileIndex(0)
     }
@@ -56,7 +60,8 @@ function App() {
     setError(null)
 
     try {
-      await uploadDocument(selectedFiles)
+      const uploadResult = await uploadDocument(selectedFiles)
+      setSessionId(uploadResult.session_id)
       setDocumentReady(true)
       setActiveFileIndex(0)
       setShowUploadModal(false)
@@ -90,13 +95,14 @@ function App() {
     setError(null)
 
     try {
-      const result = await askQuestion(question)
+      const result = await askQuestion(question,sessionId)
+  
       const activeFile = selectedFiles[activeFileIndex]
 
       const assistantMessage = {
         role: 'assistant',
         content: result.answer,
-        source: activeFile ? activeFile.name : 'Uploaded document',
+        source: result.sources?.join(', ') || 'Uploaded document',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       }
 
@@ -208,14 +214,14 @@ function App() {
               <div className="no-docs-empty-card" onClick={() => setShowUploadModal(true)}>
                 <div className="empty-card-icon">📂</div>
                 <h4>No documents yet</h4>
-                <p>Click to upload PDF or TXT files to start asking questions.</p>
+                <p>Click to upload PDF, DOCX, or TXT files to start asking questions.</p>
               </div>
             ) : (
               <div className="documents-list">
                 {selectedFiles.map((file, index) => {
                   const isActive = activeFileIndex === index
                   const isPdf = file.type === 'application/pdf' || file.name.endsWith('.pdf')
-
+                  const isDocx = file.name.toLowerCase().endsWith('.docx')
                   return (
                     <button
                       type="button"
@@ -236,7 +242,7 @@ function App() {
                           {file.name}
                         </span>
                         <div className="doc-card-meta">
-                          <span className="doc-type-tag">{isPdf ? 'PDF' : 'TXT'}</span>
+                          <span className="doc-type-tag">{isPdf ? 'PDF' : isDocx ? 'DOCX' : 'TXT'}</span>
                           <span className="doc-size-text">
                             {(file.size / (1024 * 1024)).toFixed(2)} MB
                           </span>
@@ -465,9 +471,6 @@ function App() {
                   <div className="empty-tab-state">
                     <div className="empty-tab-icon">📑</div>
                     <h4>No Sources Queried Yet</h4>
-                    <p>
-                      Ask a question in the chat to see referenced document excerpts and confidence matches.
-                    </p>
                   </div>
                 ) : (
                   <div className="sources-list">
@@ -477,14 +480,10 @@ function App() {
                           <span className="source-card-title">
                             📄 {msg.source || (activeFile ? activeFile.name : 'Document')}
                           </span>
-                          <span className="source-confidence-tag">92% Match</span>
                         </div>
-                        <p className="source-card-quote">
-                          "{msg.content.slice(0, 180)}..."
-                        </p>
                         <div className="source-card-footer">
                           <span className="source-time">Response #{index + 1}</span>
-                          <span className="source-grounded-badge">✓ Grounded Context</span>
+                          <span className="source-grounded-badge">✓ Source Used</span>
                         </div>
                       </div>
                     ))}
@@ -525,7 +524,11 @@ function App() {
                     <div className="detail-row-card">
                       <span className="detail-label">File Format</span>
                       <span className="detail-value">
-                        {activeFile.type === 'application/pdf' ? 'PDF Document' : 'Text Document (TXT)'}
+                        {activeFile.name.toLowerCase().endsWith('.docx')
+  ? 'Word Document (DOCX)'
+  : activeFile.type === 'application/pdf'
+    ? 'PDF Document'
+    : 'Text Document (TXT)'}
                       </span>
                     </div>
 
@@ -590,4 +593,4 @@ function App() {
   )
 }
 
-export default App
+export default App

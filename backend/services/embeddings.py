@@ -11,10 +11,23 @@ load_dotenv(BASE_DIR.parent / ".env")
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 
-def create_embedding(text):
-    result = client.models.embed_content(
-        model="gemini-embedding-001",
-        contents=text
-    )
+def create_embeddings(texts, batch_size=25):
+    all_embeddings = []
 
-    return result.embeddings[0].values
+    for start in range(0, len(texts), batch_size):
+        batch = texts[start:start + batch_size]
+
+        result = client.models.embed_content(
+            model="gemini-embedding-001",
+            contents=batch
+        )
+
+        all_embeddings.extend(
+            embedding.values for embedding in result.embeddings
+        )
+
+    return all_embeddings
+
+
+def create_embedding(text):
+    return create_embeddings([text])[0]

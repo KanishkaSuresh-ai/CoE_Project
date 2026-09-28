@@ -57,7 +57,9 @@ async def upload_documents(
         chunks, index, chunk_sources = build_rag_system(file_paths, filenames)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-
+    finally:
+        for file_path in file_paths:
+            Path(file_path).unlink(missing_ok=True)
     session_id = uuid4().hex
     set_rag_system(session_id, chunks, index, chunk_sources)
 

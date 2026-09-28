@@ -2,7 +2,6 @@ import React, { useState } from 'react'
 
 function FileUpload({
   selectedFiles,
-  documentReady,
   onFilesSelect,
   onUpload,
   onLimitExceeded,
@@ -15,9 +14,14 @@ function FileUpload({
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
-  const allowedTypes = ['application/pdf', 'text/plain']
+  const allowedExtensions = ['.pdf', '.txt', '.docx']
   const MAX_FILES = 3
   const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
+
+  const isAllowedFile = (file) =>
+    allowedExtensions.some((extension) =>
+      file.name.toLowerCase().endsWith(extension)
+    )
 
   const validateAndAdd = (fileList) => {
     setError('')
@@ -29,20 +33,14 @@ function FileUpload({
       return
     }
 
-    // Check file types
-    const invalidFiles = incoming.filter(
-      (file) => !allowedTypes.includes(file.type) && !file.name.endsWith('.txt') && !file.name.endsWith('.pdf')
-    )
+    const invalidFiles = incoming.filter((file) => !isAllowedFile(file))
 
     if (invalidFiles.length > 0) {
-      setError('Only PDF or TXT files are allowed.')
+      setError('Only PDF, TXT, or DOCX files are allowed.')
     }
 
-    const typeValidFiles = incoming.filter(
-      (file) => allowedTypes.includes(file.type) || file.name.endsWith('.txt') || file.name.endsWith('.pdf')
-    )
+    const typeValidFiles = incoming.filter(isAllowedFile)
 
-    // Check file size
     const oversizedFiles = typeValidFiles.filter(
       (file) => file.size > MAX_FILE_SIZE
     )
@@ -55,16 +53,13 @@ function FileUpload({
       (file) => file.size <= MAX_FILE_SIZE
     )
 
-    // Remove duplicate files
-    const newFiles = sizeValidFiles.filter((newFile) => {
-      return !selectedFiles.some((existingFile) => {
-        return (
-          existingFile.name === newFile.name &&
-          existingFile.size === newFile.size &&
-          existingFile.lastModified === newFile.lastModified
-        )
-      })
-    })
+    const newFiles = sizeValidFiles.filter((newFile) =>
+      !selectedFiles.some((existingFile) =>
+        existingFile.name === newFile.name &&
+        existingFile.size === newFile.size &&
+        existingFile.lastModified === newFile.lastModified
+      )
+    )
 
     if (newFiles.length !== sizeValidFiles.length) {
       setError('Duplicate files were skipped.')
@@ -72,9 +67,11 @@ function FileUpload({
 
     const combined = [...selectedFiles, ...newFiles]
 
-    // Maximum 3 files
     if (combined.length > MAX_FILES) {
-      if (onLimitExceeded) onLimitExceeded()
+      if (onLimitExceeded) {
+        onLimitExceeded()
+      }
+
       onFilesSelect(combined.slice(0, MAX_FILES))
       setError(`Maximum ${MAX_FILES} documents allowed.`)
       return
@@ -99,23 +96,17 @@ function FileUpload({
   }
 
   const removeFile = (index) => {
-  console.log("Remove clicked:", index)
-  console.log("Before:", selectedFiles)
+    const updated = selectedFiles.filter((_, i) => i !== index)
 
-  const updated = selectedFiles.filter((_, i) => i !== index)
+    onFilesSelect(updated)
+    setError('')
 
-  console.log("After:", updated)
-
-  onFilesSelect(updated)
-
-  setError('')
-
-  if (updated.length > 0) {
-    setSuccess(`${updated.length} document(s) selected.`)
-  } else {
-    setSuccess('')
+    if (updated.length > 0) {
+      setSuccess(`${updated.length} document(s) selected.`)
+    } else {
+      setSuccess('')
+    }
   }
-}
 
   const handleUploadClick = async () => {
     if (selectedFiles.length === 0) {
@@ -129,12 +120,13 @@ function FileUpload({
     setProgress(0)
 
     const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 85) {
+      setProgress((previousProgress) => {
+        if (previousProgress >= 85) {
           clearInterval(interval)
           return 85
         }
-        return prev + 15
+
+        return previousProgress + 15
       })
     }, 150)
 
@@ -142,7 +134,8 @@ function FileUpload({
       await onUpload()
       clearInterval(interval)
       setProgress(100)
-      setSuccess('Documents uploaded & indexed successfully!')
+      setSuccess('Documents uploaded and indexed successfully!')
+
       if (isModal && onCloseModal) {
         setTimeout(() => {
           onCloseModal()
@@ -185,16 +178,17 @@ function FileUpload({
           </svg>
         </div>
 
-        <h3>Drag & drop documents here</h3>
+        <h3>Drag &amp; drop documents here</h3>
         <p className="upload-subtext">
-          Supports <strong>PDF</strong> and <strong>TXT</strong> (up to {MAX_FILES} files, max 10MB each)
+          Supports <strong>PDF</strong>, <strong>TXT</strong>, and{' '}
+          <strong>DOCX</strong> (up to {MAX_FILES} files, max 10 MB each)
         </p>
 
         <label className="browse-files-btn">
           <span>Browse Files</span>
           <input
             type="file"
-            accept=".pdf,.txt,application/pdf,text/plain"
+            accept=".pdf,.txt,.docx,application/pdf,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             multiple
             onChange={handleFileChange}
             disabled={uploading}
@@ -223,16 +217,23 @@ function FileUpload({
 
           <div className="selected-files-list">
             {selectedFiles.map((file, index) => (
-              <div key={file.name + '-' + file.lastModified} className="selected-file-chip">
+              <div
+                key={file.name + '-' + file.lastModified}
+                className="selected-file-chip"
+              >
                 <span className="file-chip-icon">
-                  {file.name.endsWith('.txt') ? '📝' : '📄'}
+                  {file.name.toLowerCase().endsWith('.txt') ? '📝' : '📄'}
                 </span>
+
                 <div className="file-chip-info">
-                  <span className="file-chip-name" title={file.name}>{file.name}</span>
+                  <span className="file-chip-name" title={file.name}>
+                    {file.name}
+                  </span>
                   <span className="file-chip-size">
                     {(file.size / (1024 * 1024)).toFixed(2)} MB
                   </span>
                 </div>
+
                 <button
                   type="button"
                   className="remove-chip-btn"
@@ -256,11 +257,11 @@ function FileUpload({
               {uploading ? (
                 <>
                   <span className="mini-spinner"></span>
-                  <span>Processing & Indexing ({progress}%)...</span>
+                  <span>Processing &amp; Indexing ({progress}%)...</span>
                 </>
               ) : (
                 <>
-                  <span>Upload & Index Documents</span>
+                  <span>Upload &amp; Index Documents</span>
                   <span className="btn-arrow">→</span>
                 </>
               )}
@@ -270,9 +271,14 @@ function FileUpload({
           {uploading && (
             <div className="upload-progress-box">
               <div className="upload-progress-track">
-                <div className="upload-progress-fill" style={{ width: `${progress}%` }}></div>
+                <div
+                  className="upload-progress-fill"
+                  style={{ width: `${progress}%` }}
+                ></div>
               </div>
-              <span className="upload-progress-label">Creating vector embeddings & RAG store...</span>
+              <span className="upload-progress-label">
+                Creating vector embeddings &amp; RAG store...
+              </span>
             </div>
           )}
         </div>
@@ -283,19 +289,25 @@ function FileUpload({
   if (isModal) {
     return (
       <div className="upload-modal-overlay" onClick={onCloseModal}>
-        <div className="upload-modal-container" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="upload-modal-container"
+          onClick={(event) => event.stopPropagation()}
+        >
           <div className="modal-header">
             <div>
               <h3>Upload Documents</h3>
-              <p>Add PDF or TXT documents to build the RAG knowledge base</p>
+              <p>Add PDF, TXT, or DOCX documents to build the RAG knowledge base</p>
             </div>
-            <button type="button" className="close-modal-btn" onClick={onCloseModal}>
+            <button
+              type="button"
+              className="close-modal-btn"
+              onClick={onCloseModal}
+            >
               ✕
             </button>
           </div>
-          <div className="modal-content">
-            {content}
-          </div>
+
+          <div className="modal-content">{content}</div>
         </div>
       </div>
     )
