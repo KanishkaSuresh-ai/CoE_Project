@@ -26,7 +26,7 @@ function ChatMessage({ role, content, source, page }) {
 
       <div className={`message-card ${isUser ? 'user-message' : 'assistant-message'}`}>
         <div className="message-header">
-          <span className="message-author">{isUser ? 'You' : 'DocuQuery AI'}</span>
+          <span className="message-author">{isUser ? 'You' : 'DocX Assistant'}</span>
           {!isUser && (
             <button
               type="button"

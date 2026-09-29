@@ -11,54 +11,63 @@ import './App.css'
 const MAX_FILES = 1
 
 function App() {
-  const [selectedFiles, setSelectedFiles] = useState([])
+  const [selectedFiles, setSelectedFiles] = useState([]) // all uploaded docs (history)
+  const [pendingFiles, setPendingFiles] = useState([]) // files chosen in upload modal
+  const [fileSessions, setFileSessions] = useState({}) // fileKey -> session_id
   const [activeFileIndex, setActiveFileIndex] = useState(0)
   const [documentReady, setDocumentReady] = useState(false)
   const [sessionId, setSessionId] = useState(null)
   const [rightTab, setRightTab] = useState('preview') // 'sources' | 'preview' | 'details'
   const [showUploadModal, setShowUploadModal] = useState(false)
+  const [rightSidebarWidth, setRightSidebarWidth] = useState(360)
+  const [chatHistories, setChatHistories] = useState(() => {
+    try {
+      const saved = localStorage.getItem('chatHistories')
+      return saved ? JSON.parse(saved) : {}
+    } catch {
+      return {}
+    }
+  })
 
- const [chatHistories, setChatHistories] = useState(() => {
-  try {
-    const saved = localStorage.getItem('chatHistories')
-    return saved ? JSON.parse(saved) : {}
-  } catch {
-    return {}
-  }
-})
+  const [messages, setMessages] = useState([])
 
-const [messages, setMessages] = useState([])
-
-const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [popupMessage, setPopupMessage] = useState(null)
   const getFileKey = (file) => {
-  if (!file) return null
-  return `${file.name}-${file.lastModified}`
-}
+    if (!file) return null
+    return `${file.name}-${file.lastModified}`
+  }
 
   useEffect(() => {
-  localStorage.setItem('chatHistories', JSON.stringify(chatHistories))
-}, [chatHistories])
+    localStorage.setItem('chatHistories', JSON.stringify(chatHistories))
+  }, [chatHistories])
+
+  // Keep the active document's chat saved automatically
+  useEffect(() => {
+    const file = selectedFiles[activeFileIndex]
+    if (!file) return
+    const key = getFileKey(file)
+    setChatHistories((prev) => ({ ...prev, [key]: messages }))
+  }, [messages])
 
   const handleFilesSelect = (files) => {
-  setSelectedFiles(files)
-  setError(null)
-  setDocumentReady(false)
-  setSessionId(null)
-  setMessages([])
-
-  if (files.length > 0) {
-    setActiveFileIndex(0)
+    setPendingFiles(files)
+    setError(null)
   }
-}
+
+  const handleOpenUploadModal = () => {
+    setPendingFiles([])
+    setError(null)
+    setShowUploadModal(true)
+  }
 
   const handleLimitExceeded = () => {
     setPopupMessage(`You can upload a maximum of ${MAX_FILES} files only.`)
   }
 
   const handleUpload = async () => {
-    if (selectedFiles.length === 0) {
+    if (pendingFiles.length === 0) {
       setError('Please select at least one document.')
       return
     }
@@ -67,11 +76,32 @@ const [loading, setLoading] = useState(false)
     setError(null)
 
     try {
-      const uploadResult = await uploadDocument(selectedFiles)
-      setSessionId(uploadResult.session_id)
+      const uploadResult = await uploadDocument(pendingFiles)
+      const newSessionId = uploadResult.session_id
+
+      // Add new files to history (skip duplicates), keep old ones
+      const existingKeys = selectedFiles.map(getFileKey)
+      const filesToAdd = pendingFiles.filter((f) => !existingKeys.includes(getFileKey(f)))
+      const updatedFiles = [...selectedFiles, ...filesToAdd]
+
+      const sessionUpdates = {}
+      pendingFiles.forEach((f) => {
+        sessionUpdates[getFileKey(f)] = newSessionId
+      })
+      setFileSessions((prev) => ({ ...prev, ...sessionUpdates }))
+
+      // Make the newly uploaded file active
+      const newActiveFile = pendingFiles[0]
+      const newActiveKey = getFileKey(newActiveFile)
+      const newActiveIndex = updatedFiles.findIndex((f) => getFileKey(f) === newActiveKey)
+
+      setSelectedFiles(updatedFiles)
+      setActiveFileIndex(newActiveIndex)
+      setSessionId(newSessionId)
       setDocumentReady(true)
-      setActiveFileIndex(0)
+      setPendingFiles([])
       setShowUploadModal(false)
+      setMessages(chatHistories[newActiveKey] || [])
     } catch (err) {
       setError(err.message || 'Document upload failed')
       throw err
@@ -119,11 +149,10 @@ const [loading, setLoading] = useState(false)
     }
   }
 
- const handleDocumentSelect = (index) => {
-  if (index === activeFileIndex) return
-
+  const handleDocumentSelect = (index) => {
   const currentFile = selectedFiles[activeFileIndex]
   const nextFile = selectedFiles[index]
+
   // Save the current document's chat
   if (currentFile) {
     const currentKey = getFileKey(currentFile)
@@ -138,22 +167,25 @@ const [loading, setLoading] = useState(false)
   const nextKey = getFileKey(nextFile)
   const nextMessages = chatHistories[nextKey] || []
 
-  setMessages(nextMessages)
-  setActiveFileIndex(index)
-  setError(null)
-}
- const handleClearChat = () => {
-  const activeKey = getFileKey(selectedFiles[activeFileIndex])
-
-  setMessages([])
-
-  if (activeKey) {
-    setChatHistories((prev) => ({
-      ...prev,
-      [activeKey]: [],
-    }))
+    // Current chat is already auto-saved; just load the selected document's chat
+    setActiveFileIndex(index)
+    setSessionId(fileSessions[nextKey] || null)
+    setError(null)
+    setMessages(chatHistories[nextKey] || [])
   }
-}
+
+  const handleClearChat = () => {
+    const activeKey = getFileKey(selectedFiles[activeFileIndex])
+
+    setMessages([])
+
+    if (activeKey) {
+      setChatHistories((prev) => ({
+        ...prev,
+        [activeKey]: [],
+      }))
+    }
+  }
 
   const activeFile = selectedFiles[activeFileIndex]
 
@@ -168,6 +200,33 @@ const [loading, setLoading] = useState(false)
   // Sources collected from assistant messages
   const assistantMessages = messages.filter((m) => m.role === 'assistant')
   const latestAssistantMessage = assistantMessages[assistantMessages.length - 1]
+
+  // Resize bar between chat and right sidebar
+  const handleResizeStart = (e) => {
+    e.preventDefault()
+
+    const startX = e.clientX
+    const startWidth = rightSidebarWidth
+
+    document.body.classList.add('resizing')
+
+    const handleMouseMove = (moveEvent) => {
+      const delta = startX - moveEvent.clientX
+
+      const newWidth = Math.min(800, Math.max(280, startWidth + delta))
+
+      setRightSidebarWidth(newWidth)
+    }
+
+    const handleMouseUp = () => {
+      document.body.classList.remove('resizing')
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+  }
 
   return (
     <div className="app-container">
@@ -196,32 +255,45 @@ const [loading, setLoading] = useState(false)
             <span className="status-indicator-dot"></span>
             <span>{documentReady ? 'RAG Index Active' : 'No Document Loaded'}</span>
           </div>
-
-          
         </div>
       </header>
 
       {/* ================= 3-COLUMN DASHBOARD LAYOUT ================= */}
-      <div className="dashboard-grid">
+      <div
+        className="dashboard-grid"
+        style={{ '--right-sidebar-width': `${rightSidebarWidth}px` }}
+      >
         {/* ================= COLUMN 1: LEFT SIDEBAR (DOCUMENTS) ================= */}
         <aside className="sidebar-column documents-sidebar">
+          {/* Upload button (top of left sidebar) */}
+          <button
+            type="button"
+            className="sidebar-upload-btn"
+            onClick={handleOpenUploadModal}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            <span>Upload Document</span>
+          </button>
+
           <div className="sidebar-section-header">
             <div>
               <h2 className="sidebar-heading-title">Documents</h2>
               <p className="sidebar-heading-subtitle">
-                {selectedFiles.length} of {MAX_FILES} uploaded
+                {selectedFiles.length} uploaded
               </p>
             </div>
-            <span className="doc-count-badge">{selectedFiles.length}/{MAX_FILES}</span>
+            <span className="doc-count-badge">{selectedFiles.length}</span>
           </div>
-
-          
 
           <div className="documents-list-wrapper">
             <div className="documents-list-label">MY DOCUMENTS</div>
 
             {selectedFiles.length === 0 ? (
-              <div className="no-docs-empty-card" onClick={() => setShowUploadModal(true)}>
+              <div className="no-docs-empty-card" onClick={handleOpenUploadModal}>
                 <div className="empty-card-icon">📂</div>
                 <h4>No documents yet</h4>
                 <p>Click to upload PDF, DOCX, or TXT files to start asking questions.</p>
@@ -324,14 +396,14 @@ const [loading, setLoading] = useState(false)
                   <div className="hero-icon-glow"></div>
                   <span className="hero-icon">📄</span>
                 </div>
-                <h3>Welcome to DocuQuery AI</h3>
+                <h3>Welcome to DocX Assistant</h3>
                 <p>
                   Upload your documents on the left sidebar to start asking questions, summarizing content, and retrieving exact citations.
                 </p>
                 <button
                   type="button"
                   className="hero-upload-cta"
-                  onClick={() => setShowUploadModal(true)}
+                  onClick={handleOpenUploadModal}
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -420,13 +492,18 @@ const [loading, setLoading] = useState(false)
                   : 'Ask a question about this document...'
               }
             />
-
-            
           </div>
         </main>
 
         {/* ================= COLUMN 3: RIGHT SIDE (SOURCES / PREVIEW / DETAILS) ================= */}
-        <aside className="sidebar-column right-details-sidebar">
+        <aside className="sidebar-column right-details-sidebar" style={{ position: 'relative' }}>
+          {/* Resize bar (drag to adjust width) */}
+          <div
+            className="sidebar-resize-bar"
+            onMouseDown={handleResizeStart}
+            title="Drag to resize"
+          />
+
           <div className="right-sidebar-tabs">
             <button
               type="button"
@@ -523,10 +600,10 @@ const [loading, setLoading] = useState(false)
                       <span className="detail-label">File Format</span>
                       <span className="detail-value">
                         {activeFile.name.toLowerCase().endsWith('.docx')
-  ? 'Word Document (DOCX)'
-  : activeFile.type === 'application/pdf'
-    ? 'PDF Document'
-    : 'Text Document (TXT)'}
+                          ? 'Word Document (DOCX)'
+                          : activeFile.type === 'application/pdf'
+                            ? 'PDF Document'
+                            : 'Text Document (TXT)'}
                       </span>
                     </div>
 
@@ -572,8 +649,8 @@ const [loading, setLoading] = useState(false)
       {/* ================= UPLOAD MODAL ================= */}
       {showUploadModal && (
         <FileUpload
-          selectedFiles={selectedFiles}
-          documentReady={documentReady}
+          selectedFiles={pendingFiles}
+          documentReady={false}
           onFilesSelect={handleFilesSelect}
           onUpload={handleUpload}
           onLimitExceeded={handleLimitExceeded}
