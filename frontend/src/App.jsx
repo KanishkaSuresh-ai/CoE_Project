@@ -184,8 +184,7 @@ const [loading, setLoading] = useState(false)
           </div>
           <div>
             <div className="brand-title-row">
-              <h1 className="brand-title">DocuQuery AI</h1>
-              <span className="brand-badge">RAG Assistant</span>
+              <h1 className="brand-title">DocX Assistant</h1>
             </div>
             <p className="brand-subtitle">Ask anything from your documents with AI precision</p>
           </div>
@@ -197,14 +196,7 @@ const [loading, setLoading] = useState(false)
             <span>{documentReady ? 'RAG Index Active' : 'No Document Loaded'}</span>
           </div>
 
-          <button
-            type="button"
-            className="navbar-upload-btn"
-            onClick={() => setShowUploadModal(true)}
-          >
-            <span className="btn-icon">+</span>
-            <span>Upload Document</span>
-          </button>
+          
         </div>
       </header>
 
@@ -222,20 +214,7 @@ const [loading, setLoading] = useState(false)
             <span className="doc-count-badge">{selectedFiles.length}/{MAX_FILES}</span>
           </div>
 
-          <div className="sidebar-upload-trigger">
-            <button
-              type="button"
-              className="sidebar-upload-btn"
-              onClick={() => setShowUploadModal(true)}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="17 8 12 3 7 8" />
-                <line x1="12" y1="3" x2="12" y2="15" />
-              </svg>
-              <span>Upload Document</span>
-            </button>
-          </div>
+          
 
           <div className="documents-list-wrapper">
             <div className="documents-list-label">MY DOCUMENTS</div>
@@ -289,16 +268,6 @@ const [loading, setLoading] = useState(false)
                 })}
               </div>
             )}
-          </div>
-
-          <div className="sidebar-status-footer">
-            <div className="system-health-card">
-              <div className="health-icon">⚡</div>
-              <div className="health-text">
-                <strong>{documentReady ? 'RAG Ready' : 'Awaiting Upload'}</strong>
-                <p>{documentReady ? 'Embeddings indexed in memory' : 'Upload up to 3 files'}</p>
-              </div>
-            </div>
           </div>
         </aside>
 
@@ -451,9 +420,7 @@ const [loading, setLoading] = useState(false)
               }
             />
 
-            <div className="chat-footer-caption">
-              <span>Answers are generated from your uploaded document via RAG.</span>
-            </div>
+            
           </div>
         </main>
 
