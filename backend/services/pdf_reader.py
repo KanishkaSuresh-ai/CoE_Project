@@ -5,7 +5,8 @@ import pymupdf
 from docx import Document
 from pypdf import PdfReader
 from rapidocr_onnxruntime import RapidOCR
-
+from zipfile import ZipFile
+from xml.etree import ElementTree
 
 def extract_text_from_pdf(file_path):
     path = Path(file_path)
@@ -21,11 +22,27 @@ def extract_text_from_pdf(file_path):
             for paragraph in document.paragraphs
             if paragraph.text.strip()
         ]
+        for section in document.sections:
+            parts.extend(p.text for p in section.header.paragraphs if p.text.strip())
+            parts.extend(p.text for p in section.footer.paragraphs if p.text.strip())
 
-        # Include text stored in tables.
         for table in document.tables:
             for row in table.rows:
                 parts.append(" | ".join(cell.text.strip() for cell in row.cells))
+
+        if parts:
+            return "\n".join(parts)
+
+        # Fallback for text stored in other parts of the Word file.
+        with ZipFile(path) as docx_file:
+            for name in docx_file.namelist():
+                if name.startswith("word/") and name.endswith(".xml"):
+                    root = ElementTree.fromstring(docx_file.read(name))
+                    parts.extend(
+                        item.text
+                        for item in root.iter()
+                        if item.tag.endswith("}t") and item.text
+                    )
 
         return "\n".join(parts)
 

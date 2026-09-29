@@ -17,7 +17,7 @@ function PDFViewer({ file }) {
     setNumPages(null)
     setTextContent('')
 
-    if (file && file.type === 'text/plain') {
+    if (file && (file.type === 'text/plain' || file.name.toLowerCase().endsWith('.txt'))) {
       const reader = new FileReader()
 
       reader.onload = (event) => {

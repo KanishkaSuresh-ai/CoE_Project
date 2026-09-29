@@ -1,5 +1,7 @@
 import os
+import logging
 from pathlib import Path
+from venv import logger
 
 from dotenv import load_dotenv
 from google import genai
@@ -7,7 +9,7 @@ from google import genai
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
-
+logger = logging.getLogger(__name__)
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 
@@ -52,4 +54,5 @@ Answer:
         return response.text
 
     except Exception:
+        logger.exception("Gemini answer generation failed")
         return "An error occurred while generating the answer."

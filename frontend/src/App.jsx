@@ -102,13 +102,7 @@ const [loading, setLoading] = useState(false)
     setError(null)
 
     try {
-      const result = await askQuestion(
-  question,
-  sessionId,
-  selectedFiles[activeFileIndex].name
-)
-  
-      const activeFile = selectedFiles[activeFileIndex]
+      const result = await askQuestion(question, sessionId)
 
       const assistantMessage = {
         role: 'assistant',
