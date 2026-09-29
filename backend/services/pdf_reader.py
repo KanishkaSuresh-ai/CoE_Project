@@ -16,7 +16,10 @@ def extract_text_from_pdf(file_path):
         return path.read_text(encoding="utf-8", errors="ignore")
 
     if suffix == ".docx":
-        document = Document(str(path))
+        try:
+            document = Document(str(path))
+        except Exception as exc:
+            raise ValueError("This DOCX file could not be opened.") from exc
         parts = [
             paragraph.text
             for paragraph in document.paragraphs
@@ -30,7 +33,7 @@ def extract_text_from_pdf(file_path):
             for row in table.rows:
                 parts.append(" | ".join(cell.text.strip() for cell in row.cells))
 
-        if parts:
+        if any(part.strip() for part in parts):
             return "\n".join(parts)
 
         # Fallback for text stored in other parts of the Word file.

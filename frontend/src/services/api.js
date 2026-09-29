@@ -23,7 +23,7 @@ export async function uploadDocument(files) {
   return data
 }
 
-export async function askQuestion(question, sessionId, filename) {
+export async function askQuestion(question, sessionId) {
   const response = await fetch(`${API_URL}/ask`, {
     method: 'POST',
     headers: {
@@ -32,7 +32,6 @@ export async function askQuestion(question, sessionId, filename) {
     body: JSON.stringify({
       question,
       session_id: sessionId,
-      filename,
     }),
   })
 

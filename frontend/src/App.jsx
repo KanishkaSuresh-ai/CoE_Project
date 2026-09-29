@@ -119,10 +119,11 @@ const [loading, setLoading] = useState(false)
     }
   }
 
-  const handleDocumentSelect = (index) => {
+ const handleDocumentSelect = (index) => {
+  if (index === activeFileIndex) return
+
   const currentFile = selectedFiles[activeFileIndex]
   const nextFile = selectedFiles[index]
-
   // Save the current document's chat
   if (currentFile) {
     const currentKey = getFileKey(currentFile)

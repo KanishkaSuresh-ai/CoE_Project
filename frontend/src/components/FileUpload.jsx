@@ -79,7 +79,12 @@ function FileUpload({
 
     onFilesSelect(combined)
 
-    if (combined.length > 0) {
+        if (
+      combined.length > 0 &&
+      invalidFiles.length === 0 &&
+      oversizedFiles.length === 0 &&
+      newFiles.length === sizeValidFiles.length
+    ) {
       setSuccess(`${combined.length} document(s) ready to upload.`)
     }
   }

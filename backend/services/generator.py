@@ -1,7 +1,6 @@
 import os
 import logging
 from pathlib import Path
-from venv import logger
 
 from dotenv import load_dotenv
 from google import genai
@@ -51,7 +50,8 @@ Answer:
             contents=prompt
         )
 
-        return response.text
+        return response.text or "No answer text was returned. Try rephrasing your question."
+    
 
     except Exception:
         logger.exception("Gemini answer generation failed")
