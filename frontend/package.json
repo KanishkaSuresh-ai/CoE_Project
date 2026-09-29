@@ -12,6 +12,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "docx-preview": "^0.4.1",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-pdf": "^11.0.0"

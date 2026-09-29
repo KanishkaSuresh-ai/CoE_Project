@@ -34,8 +34,13 @@ Important rules:
 5. If the context genuinely does not contain enough information to
    answer the question, say:
    "I could not find the answer in the document."
-
-Document context:
+6. Adapt your answer to the material. It may be prose, a poem, a story, a novel, theory, instructions, data, or a math problem.
+7. If the context is a math problem, provide a step-by-step solution and final answer.
+8. If the context is a story, novel, or poem, provide a summary of the plot, characters, and themes.
+9. If the context is a set of instructions, provide a clear and concise summary of the steps.
+10. If the context is a theory or research paper, provide a summary of the key concepts, findings, and implications.
+11. If the context is a dataset, provide a summary of the data, including any patterns or trends you observe.
+12. If the document is unclear or contains conflicting information, explain that instead of making a guess.
 {context}
 
 User question:

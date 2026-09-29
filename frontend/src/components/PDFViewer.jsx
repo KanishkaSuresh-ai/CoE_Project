@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
+import { renderAsync } from 'docx-preview'
 import { Document, Page, pdfjs } from 'react-pdf'
 import 'react-pdf/dist/Page/TextLayer.css'
 import 'react-pdf/dist/Page/AnnotationLayer.css'
@@ -11,13 +12,18 @@ function PDFViewer({ file }) {
   const [pageNumber, setPageNumber] = useState(1)
   const [scale, setScale] = useState(0.85)
   const [textContent, setTextContent] = useState('')
+  const [docxError, setDocxError] = useState('')
+  const docxContainerRef = useRef(null)
 
   useEffect(() => {
     setPageNumber(1)
     setNumPages(null)
     setTextContent('')
 
-    if (file && (file.type === 'text/plain' || file.name.toLowerCase().endsWith('.txt'))) {
+    if (
+      file &&
+      (file.type === 'text/plain' || file.name.toLowerCase().endsWith('.txt'))
+    ) {
       const reader = new FileReader()
 
       reader.onload = (event) => {
@@ -25,6 +31,32 @@ function PDFViewer({ file }) {
       }
 
       reader.readAsText(file)
+    }
+  }, [file])
+
+  useEffect(() => {
+    const isDocx = file?.name?.toLowerCase().endsWith('.docx')
+    const container = docxContainerRef.current
+
+    if (!isDocx || !container) {
+      return
+    }
+
+    let cancelled = false
+    container.replaceChildren()
+    setDocxError('')
+
+    renderAsync(file, container).catch((error) => {
+      console.error('Unable to render DOCX preview:', error)
+
+      if (!cancelled) {
+        setDocxError('Unable to preview this DOCX file.')
+      }
+    })
+
+    return () => {
+      cancelled = true
+      container.replaceChildren()
     }
   }, [file])
 
@@ -49,8 +81,10 @@ function PDFViewer({ file }) {
           <div className="text-preview-badge">📝 DOCX Document</div>
           <span className="text-preview-name">{file.name}</span>
         </div>
+
         <div className="text-preview-content">
-          <p>Preview is unavailable, but you can ask questions about this document.</p>
+          {docxError && <p>{docxError}</p>}
+          <div ref={docxContainerRef} />
         </div>
       </div>
     )
@@ -63,6 +97,7 @@ function PDFViewer({ file }) {
           <div className="text-preview-badge">📝 TXT Document</div>
           <span className="text-preview-name">{file.name}</span>
         </div>
+
         <div className="text-preview-content">
           <pre>{textContent || 'Loading text preview...'}</pre>
         </div>
